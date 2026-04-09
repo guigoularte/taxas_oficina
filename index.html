@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Taxas — Oficina Mecânica</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde:        #0F6E56;
+    --verde-medio:  #1D9E75;
+    --verde-claro:  #E1F5EE;
+    --verde-texto:  #085041;
+    --cinza-bg:     #F9F9F8;
+    --cinza-borda:  #E0DED8;
+    --cinza-texto:  #5F5E5A;
+    --preto:        #2C2C2A;
+    --branco:       #FFFFFF;
+    --radius:       10px;
+    --radius-sm:    6px;
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--cinza-bg);
+    color: var(--preto);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--verde);
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header svg { flex-shrink: 0; }
+  header h1 { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+  header p  { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+
+  main { max-width: 680px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+
+  .card {
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cinza-texto);
+    margin-bottom: 1rem;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 1rem;
+  }
+  .input-group:last-child { margin-bottom: 0; }
+  .input-group label { font-size: 0.8rem; color: var(--cinza-texto); font-weight: 600; }
+
+  input[type="number"], select {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--preto);
+    background: var(--branco);
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="number"]:focus, select:focus { border-color: var(--verde-medio); }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--cinza-texto);
+    pointer-events: none;
+  }
+
+  .parcelas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 6px;
+  }
+  .parc-btn {
+    padding: 0.4rem 0;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: var(--radius-sm);
+    background: var(--branco);
+    font-size: 0.82rem;
+    color: var(--cinza-texto);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s;
+    font-weight: 600;
+  }
+  .parc-btn:hover { border-color: var(--verde-medio); color: var(--verde); }
+  .parc-btn.active {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: #fff;
+  }
+
+  .secao-titulo {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--cinza-texto);
+    padding: 0.5rem 0 0.4rem;
+    border-bottom: 1px solid var(--cinza-borda);
+    margin-bottom: 0.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    table-layout: fixed;
+  }
+  th {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--cinza-texto);
+    text-align: left;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--cinza-borda);
+  }
+  th:not(:first-child) { text-align: right; }
+  td { padding: 7px 8px; border-bottom: 1px solid #F0EEE8; vertical-align: middle; }
+  td:not(:first-child) { text-align: right; }
+  tr:last-child td { border-bottom: none; }
+
+  .col-nome  { width: 42%; }
+  .col-taxa  { width: 18%; color: var(--cinza-texto); font-size: 0.82rem; }
+  .col-desc  { width: 20%; color: #c0392b; font-size: 0.82rem; }
+  .col-liq   { width: 20%; font-weight: 700; color: var(--verde); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-pix   { background: var(--verde-claro); color: var(--verde-texto); }
+  .badge-deb   { background: #E6F1FB; color: #0C447C; }
+  .badge-cred  { background: #FAEEDA; color: #633806; }
+
+  .nota-parc {
+    font-size: 0.76rem;
+    color: var(--cinza-texto);
+    background: var(--cinza-bg);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.72rem;
+    color: #aaa;
+    padding: 1.5rem 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+  </svg>
+  <div>
+    <h1>Calculadora de Taxas</h1>
+    <p>Oficina Mecânica — Quanto você recebe em cada forma de pagamento</p>
+  </div>
+</header>
+
+<main>
+
+  <div class="card">
+    <div class="card-title">Valor do serviço</div>
+    <div class="input-group">
+      <label for="valor">Valor cobrado do cliente (R$)</label>
+      <input type="number" id="valor" min="0" step="0.01" value="500" placeholder="0,00">
+    </div>
+  </div>
+
+  <div class="card" id="card-parcelas" style="display:none;">
+    <div class="card-title">Parcelamento — crédito</div>
+    <div class="parcelas-grid" id="grid-parcelas"></div>
+    <div class="nota-parc" id="nota-parc"></div>
+  </div>
+
+  <div class="card" id="card-resultados">
+    <div class="secao-titulo">PIX <span class="badge badge-pix">à vista</span></div>
+    <table>
+      <thead><tr>
+        <th class="col-nome">Tipo</th>
+        <th class="col-taxa">Taxa</th>
+        <th class="col-desc">Desconto</th>
+        <th class="col-liq">Você recebe</th>
+      </tr></thead>
+      <tbody id="tbody-pix"></tbody>
+    </table>
+
+    <div class="secao-titulo" style="margin-top:1rem;">Débito <span class="badge badge-deb">à vista</span></div>
+    <table>
+      <thead><tr>
+        <th class="col-nome">Bandeira</th>
+        <th class="col-taxa">Taxa</th>
+        <th class="col-desc">Desconto</th>
+        <th class="col-liq">Você recebe</th>
+      </tr></thead>
+      <tbody id="tbody-deb"></tbody>
+    </table>
+
+    <div class="secao-titulo" style="margin-top:1rem;">
+      Crédito à vista <span class="badge badge-cred">à vista</span>
+    </div>
+    <table>
+      <thead><tr>
+        <th class="col-nome">Bandeira</th>
+        <th class="col-taxa">Taxa</th>
+        <th class="col-desc">Desconto</th>
+        <th class="col-liq">Você recebe</th>
+      </tr></thead>
+      <tbody id="tbody-cred-av"></tbody>
+    </table>
+
+    <div class="secao-titulo" style="margin-top:1rem;" id="titulo-parc">
+      Crédito parcelado <span class="badge badge-cred" id="badge-parc">selecione parcelas</span>
+    </div>
+    <table>
+      <thead><tr>
+        <th class="col-nome">Bandeira</th>
+        <th class="col-taxa">Taxa efetiva</th>
+        <th class="col-desc">Desconto</th>
+        <th class="col-liq">Você recebe</th>
+      </tr></thead>
+      <tbody id="tbody-cred-parc"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>Taxas conforme tabela da maquininha. Valores informativos.</footer>
+
+<script>
+const TAXAS = {
+  pix:       0.0049,
+  deb_vm:    0.0137,
+  deb_demais:0.0298,
+  cred_av: {
+    "Visa / Mastercard": 0.0315,
+    "Diners Club":       0.0319,
+    "Demais bandeiras":  0.0617,
+  },
+  cred_parc_base: {
+    "Visa / Mastercard": 0.0270,
+    "Diners Club":       0.0379,
+    "Demais bandeiras":  0.0678,
+  },
+  acrescimo_mensal: 0.0159,
+};
+
+const brl = v => "R$ " + v.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const pct = v => (v * 100).toFixed(2).replace(".",",") + "%";
+
+let parcelas = 0;
+
+function row(nome, taxa, valor) {
+  const desc = valor * taxa;
+  const liq  = valor - desc;
+  return `<tr>
+    <td>${nome}</td>
+    <td class="col-taxa">${pct(taxa)}</td>
+    <td class="col-desc">- ${brl(desc)}</td>
+    <td class="col-liq">${brl(liq)}</td>
+  </tr>`;
+}
+
+function update() {
+  const valor = parseFloat(document.getElementById("valor").value) || 0;
+
+  document.getElementById("tbody-pix").innerHTML =
+    row("Pix à vista", TAXAS.pix, valor);
+
+  document.getElementById("tbody-deb").innerHTML =
+    row("Visa / Mastercard", TAXAS.deb_vm, valor) +
+    row("Demais bandeiras",  TAXAS.deb_demais, valor);
+
+  document.getElementById("tbody-cred-av").innerHTML =
+    Object.entries(TAXAS.cred_av).map(([n,t]) => row(n, t, valor)).join("");
+
+  if (parcelas >= 2) {
+    const acr = TAXAS.acrescimo_mensal * parcelas;
+    document.getElementById("badge-parc").textContent = parcelas + "x";
+    document.getElementById("nota-parc").innerHTML =
+      `Taxa base + ${pct(TAXAS.acrescimo_mensal)} × ${parcelas} meses de acréscimo.<br>
+       <strong>Visa/Mastercard:</strong> ${pct(TAXAS.cred_parc_base["Visa / Mastercard"] + acr)} &nbsp;
+       <strong>Diners:</strong> ${pct(TAXAS.cred_parc_base["Diners Club"] + acr)} &nbsp;
+       <strong>Demais:</strong> ${pct(TAXAS.cred_parc_base["Demais bandeiras"] + acr)}`;
+    document.getElementById("tbody-cred-parc").innerHTML =
+      Object.entries(TAXAS.cred_parc_base).map(([n,t]) => row(n, t + acr, valor)).join("");
+  } else {
+    document.getElementById("badge-parc").textContent = "selecione parcelas";
+    document.getElementById("nota-parc").textContent = "";
+    document.getElementById("tbody-cred-parc").innerHTML =
+      `<tr><td colspan="4" style="color:var(--cinza-texto);font-size:0.82rem;text-align:center;padding:12px 0;">
+        Selecione o número de parcelas acima para ver os valores
+      </td></tr>`;
+  }
+}
+
+function buildParcelas() {
+  const grid = document.getElementById("grid-parcelas");
+  grid.innerHTML = "";
+  const av = document.createElement("button");
+  av.className = "parc-btn active";
+  av.textContent = "à vista";
+  av.dataset.p = "0";
+  grid.appendChild(av);
+  for (let i = 2; i <= 18; i++) {
+    const b = document.createElement("button");
+    b.className = "parc-btn";
+    b.textContent = i + "x";
+    b.dataset.p = i;
+    grid.appendChild(b);
+  }
+  grid.addEventListener("click", e => {
+    const btn = e.target.closest(".parc-btn");
+    if (!btn) return;
+    grid.querySelectorAll(".parc-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    parcelas = parseInt(btn.dataset.p) || 0;
+    document.getElementById("card-parcelas").style.display = "block";
+    update();
+  });
+  document.getElementById("card-parcelas").style.display = "block";
+}
+
+document.getElementById("valor").addEventListener("input", update);
+buildParcelas();
+update();
+</script>
+</body>
+</html>
